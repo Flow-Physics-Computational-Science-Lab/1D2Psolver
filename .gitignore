@@ -1,0 +1,6 @@
+# Folder
+.cache/**
+src/.cache/**
+
+# Files
+src/compile_commands.json
