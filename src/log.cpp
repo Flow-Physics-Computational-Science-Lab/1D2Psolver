@@ -94,7 +94,12 @@ void writeBinary2DArray(const char*& fname, int nx, int ny, double**& arr)
     }
 
     // Write the array to the binary file
-    out.write(reinterpret_cast<const char*>(arr), (nx*ny)*sizeof(double));
+    //out.write(reinterpret_cast<const char*>(arr), (nx*ny)*sizeof(double));
+
+    // Write each row of the 2D array to the binary file
+    for (int i=0; i<nx; i++) {
+        out.write(reinterpret_cast<const char*>(arr[i]), ny*sizeof(double));
+    }
 
     // Close the file
     out.close();

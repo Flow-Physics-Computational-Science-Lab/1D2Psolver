@@ -45,8 +45,8 @@ int main()
     allocate2d(n+2*nhc-1, 7, Qnp1);
     initializeWaterAirShockTube(phase1_0, phase2_0, xI, n, nhc, xcs, Qn);
     const char* file_Q0 = "./out/Q00000";
-    //writeBinary2DArray(file_Q0, n+2*nhc-1, 7, Qn);
-    writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
+    writeBinary2DArray(file_Q0, n+2*nhc-1, 7, Qn);
+    //writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
     
     // 4) Run simulation:
 
