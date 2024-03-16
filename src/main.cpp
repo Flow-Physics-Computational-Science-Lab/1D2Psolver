@@ -1,9 +1,16 @@
 #include <iostream>
+#include <string>
 #include "allocate.h"
 #include "array.h"
 #include "grid.h"
 #include "field.h"
+#include "schemes.h"
 #include "log.h"
+
+struct RunTimeParameters {
+    int nit, nrest;
+    double dt;
+};
 
 int main() 
 {
@@ -30,7 +37,11 @@ int main()
     //printPhase(phase2_0);
     double xI = 0.7;
     // c) Run time parameters:
-    double **Qn, **Qnp1;
+    double **Qn, **Qnp1, **En, ***Enf;
+    RunTimeParameters sim_par;
+    sim_par = (RunTimeParameters){.nit = 101, .nrest = 100, .dt = 1.0e-5};
+    //std::string file_Qn;
+    char buffer[20];
 
     // 2) Initialize grid:
     linSpace(x0, xn, n, xs);
@@ -44,11 +55,34 @@ int main()
     allocate2d(n+2*nhc-1, 7, Qn);
     allocate2d(n+2*nhc-1, 7, Qnp1);
     initializeWaterAirShockTube(phase1_0, phase2_0, xI, n, nhc, xcs, Qn);
-    const char* file_Q0 = "./out/Q00000";
-    writeBinary2DArray(file_Q0, n+2*nhc-1, 7, Qn);
+    //const char* file_Q0 = "./out/Q00000";
+    sprintf(buffer, "./out/Q%05d", 0);
+    std::string file_Qn(buffer);
+    writeBinary2DArray(file_Qn, n+2*nhc-1, 7, Qn);
     //writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
     
     // 4) Run simulation:
+    allocate2d(n+2*nhc-1, 6, En);
+    allocate3d(n+2*nhc-1, 7, 2, Enf);
+    for (int i=0; i<sim_par.nit; i++) {
+        // Hyperbolic Gudunov:
+        advanceTimeHyperbolicGudunov(
+            phase1_0, phase2_0, 
+            sim_par.dt, dx,
+            n+2*nhc-1, 
+            Qn, Qnp1,
+            En, Enf
+        );
+        // Pressure and velocity relaxation:
+        //relaxationPresVel();
+        //updateQn();
+        if (i%sim_par.nrest == 0) {
+            //file_Qn = "./out/Q" + std::format("{i:05d}"); 
+            sprintf(buffer, "./out/Q%05d", i);
+            std::string file_Qn(buffer);
+            writeBinary2DArray(file_Qn, n+2*nhc-1, 7, Qn); 
+        }
+    }
 
     // 5) Deallocate arrays:
     deallocate1d(xs);
@@ -56,6 +90,8 @@ int main()
     deallocate1d(xhs);
     deallocate2d(Qn);
     deallocate2d(Qnp1);
+    deallocate2d(En);
+    deallocate3d(n+2*nhc-1, 7, Enf);
 
     std::cout << "end" << std::endl;
     return 0;

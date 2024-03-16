@@ -23,6 +23,11 @@
  *  double*&     xcs    : reference to array of cell centers padded with halo 
  *                        cells;
  *  double**&    Q0     : reference to array of conservative variables;
+ *
+ * TODO:
+ * -----
+ *  - test if one should do the "boolean" operation already inside the for loop
+ *  to assign the values for \alpha_1;
  */
 void initializeWaterAirShockTube(
     phase phase1, phase phase2, double xI, 
@@ -87,7 +92,8 @@ void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Q
     }
 
     // Compute BCs:
-    // No-slip for velocity;
+    // No-slip for velocity (left wall for sure, hard coded no-gradient for right
+    // wall as well);
     // No-gradient for scalars;
     computeBCs(n, nhc, Qn);
 }
@@ -99,9 +105,9 @@ void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Q
  *
  * Parameters:
  * -----------
- *  int          n      : number of nodes;
- *  int          nhc    : number of halo cells;
- *  double**&    Qn     : reference to array of conservative variables;
+ *  int       n   : number of nodes;
+ *  int       nhc : number of halo cells;
+ *  double**& Qn  : reference to array of conservative variables;
  *
  * TODO:
  * -----
@@ -125,9 +131,52 @@ void computeBCs(int n,  int nhc, double**& Qn)
         Qn[nhc+(i+n-1)][3] =  Qn[nhc+(-i+n-2)][3];
         Qn[nhc-(i+1)  ][4] =  Qn[nhc+i][4];
         Qn[nhc+(i+n-1)][4] =  Qn[nhc+(-i+n-2)][4];
-        Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
-        Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
+        // No-slip for right wall:
+        //Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
+        //Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
+        // No-gradient:
+        Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
+        Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
         Qn[nhc-(i+1)  ][6] =  Qn[nhc+i][6];
         Qn[nhc+(i+n-1)][6] =  Qn[nhc+(-i+n-2)][6];
+    }
+}
+
+/* Method to compute fluxes at cell centers. All algebraic operations for phasic
+ * pressure consider an stiffened gas EoS.
+ *
+ * Parameters:
+ * -----------
+ *  struct phase phase1 : structure phase1 defined in "field.h";
+ *  struct phase phase2 : structure phase2 defined in "field.h";
+ *  int          nt     : total number of cells padded with halos;
+ *  double**&    Qn     : reference to array of conservative variables;
+ *  double**&    En     : reference to array of fluxes based on Qn;
+ *
+ * TODO:
+ * -----
+ *  - implement arbitraty EoS to compute \alpha_k p_k;
+ */
+void computeFluxCellCenters(phase phase1, phase phase2, int nt, double **&Qn, double **&En)
+{
+    std::cout << "computeFluxCellCenters" << std::endl;
+    
+    // Loop through cells. Be aware that q_0 is in fact \alpha_1.
+    double u_k, a_kp_k;
+    for (int i=0; i<nt; i++) {
+        // Phase 1:
+        En[i][0] = Qn[i][2];
+        u_k = Qn[i][2]/Qn[i][1];
+        a_kp_k = (phase1.gamma-1.0)*(Qn[i][3]-0.5*Qn[i][2]*u_k) \
+               - Qn[i][0]*phase1.gamma*phase1.pi;
+        En[i][1] = Qn[i][2]*u_k + a_kp_k;
+        En[i][2] = Qn[i][3]*u_k + a_kp_k*u_k;
+        // Phase 2:
+        En[i][3] = Qn[i][5];
+        u_k = Qn[i][5]/Qn[i][4];
+        a_kp_k = (phase2.gamma-1.0)*(Qn[i][6]-0.5*Qn[i][5]*u_k) \
+               - (1.0-Qn[i][0])*phase2.gamma*phase2.pi;
+        En[i][4] = Qn[i][5]*u_k + a_kp_k;
+        En[i][5] = Qn[i][6]*u_k + a_kp_k*u_k;
     }
 }

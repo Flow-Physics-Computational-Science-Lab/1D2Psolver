@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <string>
 #include "log.h"
 #include "field.h"
 
@@ -81,7 +82,7 @@ void writeBinary1DArray(const char*& fname, int n, double*& arr)
  *  should output in some other way that the metadata or the shape of the array
  *  is still written to the output.
  */
-void writeBinary2DArray(const char*& fname, int nx, int ny, double**& arr)
+void writeBinary2DArray(std::string fname, int nx, int ny, double**& arr)
 {
     std::cout << "writeBinaryArray" << std::endl;
     
