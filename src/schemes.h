@@ -8,7 +8,7 @@ void advanceTimeHyperbolicGudunov(
     double dt, double dx,
     int nt, 
     double**& Qn, double**& Qnp1,
-    double**& En, double***& Enpmh
+    double**& Snf, double**& En, double**& Enpmh
 );
 
 #endif

@@ -159,7 +159,7 @@ void computeBCs(int n,  int nhc, double**& Qn)
  */
 void computeFluxCellCenters(phase phase1, phase phase2, int nt, double **&Qn, double **&En)
 {
-    std::cout << "computeFluxCellCenters" << std::endl;
+    //std::cout << "computeFluxCellCenters" << std::endl;
     
     // Loop through cells. Be aware that q_0 is in fact \alpha_1.
     double u_k, a_kp_k;

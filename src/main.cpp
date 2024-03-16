@@ -37,7 +37,7 @@ int main()
     //printPhase(phase2_0);
     double xI = 0.7;
     // c) Run time parameters:
-    double **Qn, **Qnp1, **En, ***Enf;
+    double **Qn, **Qnp1, **Snf, **En, **Enf;
     RunTimeParameters sim_par;
     sim_par = (RunTimeParameters){.nit = 101, .nrest = 100, .dt = 1.0e-5};
     //std::string file_Qn;
@@ -62,8 +62,9 @@ int main()
     //writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
     
     // 4) Run simulation:
+    allocate2d(n+2*nhc-2, 2, Snf);
     allocate2d(n+2*nhc-1, 6, En);
-    allocate3d(n+2*nhc-1, 7, 2, Enf);
+    allocate2d(n+2*nhc-2, 6, Enf);
     for (int i=0; i<sim_par.nit; i++) {
         // Hyperbolic Gudunov:
         advanceTimeHyperbolicGudunov(
@@ -71,10 +72,11 @@ int main()
             sim_par.dt, dx,
             n+2*nhc-1, 
             Qn, Qnp1,
-            En, Enf
+            Snf, En, Enf
         );
         // Pressure and velocity relaxation:
         //relaxationPresVel();
+        // Update Qn as the computed Qn+1:
         //updateQn();
         if (i%sim_par.nrest == 0) {
             //file_Qn = "./out/Q" + std::format("{i:05d}"); 
@@ -90,8 +92,9 @@ int main()
     deallocate1d(xhs);
     deallocate2d(Qn);
     deallocate2d(Qnp1);
+    deallocate2d(Snf);
     deallocate2d(En);
-    deallocate3d(n+2*nhc-1, 7, Enf);
+    deallocate2d(Enf);
 
     std::cout << "end" << std::endl;
     return 0;
