@@ -62,15 +62,17 @@ int main()
     //writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
     
     // 4) Run simulation:
-    allocate2d(n+2*nhc-2, 2, Snf);
+    allocate2d(n, 2, Snf);
+    //allocate2d(n+2*nhc-2, 2, Snf);
     allocate2d(n+2*nhc-1, 6, En);
-    allocate2d(n+2*nhc-2, 6, Enf);
+    allocate2d(n, 6, Enf);
+    //allocate2d(n+2*nhc-2, 6, Enf);
     for (int i=0; i<sim_par.nit; i++) {
         // Hyperbolic Gudunov:
         advanceTimeHyperbolicGudunov(
             phase1_0, phase2_0, 
             sim_par.dt, dx,
-            n+2*nhc-1, 
+            n, nhc, 
             Qn, Qnp1,
             Snf, En, Enf
         );

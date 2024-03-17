@@ -27,5 +27,9 @@ double stiffenedGasSoundSpeed(
     c2 = (phase.gamma-1)*((phase.gamma-2)*(a_rho_et-0.5*a_rho_u*a_rho_u/a_rho) \
        - a*phase.gamma*phase.pi)/a_rho;
 
+    // Prevent negative speed of sound:
+    double epsilon = 1.0e-8;
+    c2 = -(c2-fabs(c2))/(2.0*fabs(c2))*epsilon + (c2+fabs(c2))/2.0;
+
     return sqrt(c2);
 }
