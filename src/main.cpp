@@ -1,16 +1,13 @@
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include "allocate.h"
 #include "array.h"
 #include "grid.h"
 #include "field.h"
-#include "schemes.h"
+#include "schemes/runtimeparameters.h"
+#include "schemes/gudunov.h"
 #include "log.h"
-
-struct RunTimeParameters {
-    int nit, nrest;
-    double dt;
-};
 
 int main() 
 {
@@ -39,7 +36,8 @@ int main()
     // c) Run time parameters:
     double **Qn, **Qnp1, **Snf, **En, **Enf;
     RunTimeParameters sim_par;
-    sim_par = (RunTimeParameters){.nit = 101, .nrest = 100, .dt = 1.0e-5};
+    sim_par = (RunTimeParameters){
+        .nit = 101, .nrest = 100, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
     //std::string file_Qn;
     char buffer[20];
 
@@ -67,19 +65,39 @@ int main()
     allocate2d(n+2*nhc-1, 6, En);
     allocate2d(n, 6, Enf);
     //allocate2d(n+2*nhc-2, 6, Enf);
-    for (int i=0; i<sim_par.nit; i++) {
+    std::cout << "Iterations:" << std::endl;
+    for (int i=1; i<sim_par.nit; i++) {
+        std::cout << i << ", ";
+
         // Hyperbolic Gudunov:
-        advanceTimeHyperbolicGudunov(
-            phase1_0, phase2_0, 
-            sim_par.dt, dx,
-            n, nhc, 
-            Qn, Qnp1,
-            Snf, En, Enf
-        );
+        try {
+            advanceTimeHyperbolicGudunov(
+                phase1_0, phase2_0, 
+                sim_par,
+                n, nhc, 
+                Qn, Qnp1,
+                Snf, En, Enf
+            );
+        } catch (const std::runtime_error) {
+            deallocate1d(xs);
+            deallocate1d(xcs);
+            deallocate1d(xhs);
+            deallocate2d(Qn);
+            deallocate2d(Qnp1);
+            deallocate2d(Snf);
+            deallocate2d(En);
+            deallocate2d(Enf);
+            throw std::runtime_error("Insufficient dt for prescribed CFL.");
+            //return 1;
+        }
+
         // Pressure and velocity relaxation:
         //relaxationPresVel();
+
         // Update Qn as the computed Qn+1:
-        //updateQn();
+        updateQn(n+2*nhc-1, Qn, Qnp1);
+
+        // Write file:
         if (i%sim_par.nrest == 0) {
             //file_Qn = "./out/Q" + std::format("{i:05d}"); 
             sprintf(buffer, "./out/Q%05d", i);
@@ -87,6 +105,7 @@ int main()
             writeBinary2DArray(file_Qn, n+2*nhc-1, 7, Qn); 
         }
     }
+    std::cout << std::endl;
 
     // 5) Deallocate arrays:
     deallocate1d(xs);

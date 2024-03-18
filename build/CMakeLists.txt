@@ -27,10 +27,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 # Add files
 file(GLOB sources ../src/*.cpp ../src/*.h)
+file(GLOB schemes ../src/schemes/*.cpp ../src/schemes/*.h)
 
 # Add an executable called Solver to the project
 add_executable(1D2Psolver.x 
-    ${sources}
+    ${sources} 
+    ${schemes}
     )
 
 # just for example add some compiler flags

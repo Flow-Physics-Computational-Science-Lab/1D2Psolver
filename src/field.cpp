@@ -180,3 +180,22 @@ void computeFluxCellCenters(phase phase1, phase phase2, int nt, double **&Qn, do
         En[i][5] = Qn[i][6]*u_k + a_kp_k*u_k;
     }
 }
+
+/* Method to update Qn based on Qn+1.
+ *
+ * Parameters:
+ * -----------
+ *  int       nt   : total number of cells padded with halos;
+ *  double**& Qn   : reference to array of conservative variables;
+ *  double**& Qnp1 : reference to array of fluxes based on Qn;
+ */
+void updateQn(int nt, double**& Qn, double**& Qnp1)
+{
+    //std::cout << "updateQn" << std::endl;
+
+    for (int i=0; i<nt; i++) {
+        for (int j=0; j<7; j++) {
+            Qn[i][j] = Qnp1[i][j];
+        }
+    }
+}

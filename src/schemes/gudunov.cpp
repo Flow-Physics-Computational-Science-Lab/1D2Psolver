@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cmath>
-#include "field.h"
-#include "schemes.h"
-#include "thermo.h"
+#include <stdexcept>
+#include "../field.h"
+#include "gudunov.h"
+#include "../thermo.h"
+#include "runtimeparameters.h"
 
 /* Method to maximum wave speed at cell face. 
  *
@@ -133,10 +135,14 @@ void computeWaveSpeedGudunovCellFace(
  * And Enf in the form:
  *      Enf[face i][flux of property j];
  *
+ * Also checks if dt is sufficient for the prescribed CFL.
+ *
  * Parameters:
  * -----------
  *  struct phase phase1 : phase1 structure with EoS parameters;
  *  struct phase phase2 : phase1 structure with EoS parameters;
+ *  struct RunTimeParameters
+ *               sim_par : sim_par structure with dt and dx parameters;
  *  int          n      : number of nodes;
  *  int          nhc    : number of halo cells;
  *  double**&    Qn     : reference to array of conservative variables at time
@@ -148,6 +154,7 @@ void computeWaveSpeedGudunovCellFace(
  */
 void extrapolateGudunovFluxCellFaces(
     phase phase1, phase phase2, 
+    RunTimeParameters sim_par,
     int n, int nhc, 
     double**& Qn, 
     double**& Snf, double**& En, double**& Enf
@@ -156,31 +163,39 @@ void extrapolateGudunovFluxCellFaces(
     //std::cout << "extrapolateGudunovFluxCellFaces" << std::endl;
     
     // Compute wave speeds at cell faces:
-    // HERE - check wave speeds required only in faces inside the domain and its
-    // boundary
     double* local_wave_speed = new double[2];
-    for (int i=nhc; i<(n+nhc); i++) {
+    double overall_max = 0.0;
+    double local_max;
+    for (int i=(nhc-1); i<(n+nhc-1); i++) {
         // Will compare \lambda_l with \lambda_I, check if required.
         computeWaveSpeedGudunovCellFace(
             phase1, phase2, 
             Qn[i], Qn[i+1],
             local_wave_speed
         );
-        Snf[i][0] = local_wave_speed[0];
-        Snf[i][1] = local_wave_speed[1];
+        Snf[i-nhc+1][0] = local_wave_speed[0];
+        Snf[i-nhc+1][1] = local_wave_speed[1];
+        // Check if CFL is satisfied for required dt:
+        local_max = fmax(local_wave_speed[0], local_wave_speed[1]);
+        overall_max = fmax(overall_max, local_max);
+    }
+
+    double local_CFL_max = overall_max*sim_par.dt/sim_par.dx;
+
+    if (local_CFL_max > sim_par.CFL) {
+        delete[] local_wave_speed;
+        throw std::runtime_error("Insufficient dt for prescribed CFL.");
     }
 
     // Extrapolate fluxes at cell faces based on the Gudunov approach:
-    // HERE - check fluxes required only in faces inside the domain and its
-    // boundary
-    for (int i=n; i<(n+nhc); i++) {
+    for (int i=(nhc-1); i<(n+nhc-1); i++) {
         for (int j=0; j<3; j++) {
-            Enf[i][j] = 0.5*(En[i][j] + En[i+1][j] \
-                            -Snf[i][0]*(Qn[i+1][j+1] - Qn[i][j+1]));
+            Enf[i-nhc+1][j] = 0.5*(En[i][j] + En[i+1][j] \
+                                  -Snf[i-nhc+1][0]*(Qn[i+1][j+1] - Qn[i][j+1]));
         }
         for (int j=3; j<6; j++) {
-            Enf[i][j] = 0.5*(En[i][j] + En[i+1][j] \
-                            -Snf[i][1]*(Qn[i+1][j+1] - Qn[i][j+1]));
+            Enf[i-nhc+1][j] = 0.5*(En[i][j] + En[i+1][j] \
+                                 -Snf[i-nhc+1][1]*(Qn[i+1][j+1] - Qn[i][j+1]));
         }
     }
 
@@ -198,29 +213,30 @@ void extrapolateGudunovFluxCellFaces(
  *
  * Parameters:
  * -----------
- *  struct phase phase1 : phase1 structure with EoS parameters;
- *  struct phase phase2 : phase1 structure with EoS parameters;
- *  double       dt     : time increment;
- *  double       dx     : grid spacing;
- *  int          nt     : total number of cells, counting halos (n+2*nhc-1);
- *  double**&    Qn     : reference to array of conservative variables at time
- *                        step n;
- *  double**&    Qnp1   : reference to array of conservative variables at time
- *                        step n+1;
- *  double**&    Snf    : reference to array of wave speeds at cell faces at time 
- *                        step n;
- *  double**&    En     : reference to array of fluxes based on Qn at time step n;
- *  double**&    Enf    : reference to array of fluxes extrapolated to cell faces 
- *                        based on En at time step n;
+ *  struct phase phase1  : phase1 structure with EoS parameters;
+ *  struct phase phase2  : phase1 structure with EoS parameters;
+ *  struct RunTimeParameters
+ *               sim_par : sim_par structure with dt and dx parameters;
+ *  int          nt      : total number of cells, counting halos (n+2*nhc-1);
+ *  double**&    Qn      : reference to array of conservative variables at time
+ *                         step n;
+ *  double**&    Qnp1    : reference to array of conservative variables at time
+ *                         step n+1;
+ *  double**&    Snf     : reference to array of wave speeds at cell faces at time 
+ *                         step n;
+ *  double**&    En      : reference to array of fluxes based on Qn at time step n;
+ *  double**&    Enf     : reference to array of fluxes extrapolated to cell faces 
+ *                         based on En at time step n;
  *
  * TODO:
  * -----
  *  - check how to use it as local variable without having to allocate memory for
  *  it everytime;
+ *  - improve exception for CFL check;
  */
 void advanceTimeHyperbolicGudunov(
     phase phase1, phase phase2, 
-    double dt, double dx, 
+    RunTimeParameters sim_par,
     int n, int nhc, 
     double**& Qn, double**& Qnp1,
     double**& Snf, double**& En, double**& Enf
@@ -232,9 +248,35 @@ void advanceTimeHyperbolicGudunov(
     computeFluxCellCenters(phase1, phase2, n+2*nhc-1, Qn, En);
 
     // Extrapolate fluxes at cell faces:
-    extrapolateGudunovFluxCellFaces(phase1, phase2, n, nhc, Qn, Snf, En, Enf);
+    try {
+        extrapolateGudunovFluxCellFaces(phase1, phase2, sim_par, n, nhc, Qn, Snf, En, Enf);
+    } catch (const std::runtime_error) {
+        throw std::runtime_error("Insufficient dt for prescribed CFL.");
+    }
 
     // Advance in time:
-    for (int i=0; i<n; i++) {
+    double p_I, u_I;
+    double dt = sim_par.dt, dx = sim_par.dx;
+    for (int i=nhc; i<(n-1-nhc); i++) {
+        p_I = computePressureInterface(phase1, phase2, Qn[i]);
+        u_I = computeVelocityInterface(phase1, phase2, Qn[i]);
+        // Volume fraction of phase 1:
+        Qnp1[i][0] = Qn[i][0] \
+            - (dt/(2.0*dx))*((Qn[i][2]/Qn[i][1])*(Qn[i+1][0]-Qn[i-1][0])
+                    - Snf[i-nhc+1][0]*(Qn[i+1][0]-Qn[i][0])
+                    + Snf[i-nhc][0]*(Qn[i][0]-Qn[i-1][0]));
+        // Phase 1:
+        Qnp1[i][1] = Qn[i][1] - (dt/dx)*(Enf[i-nhc+1][0]-Enf[i-nhc][0]);
+        Qnp1[i][2] = Qn[i][2] - (dt/dx)*(Enf[i-nhc+1][1]-Enf[i-nhc][1]) \
+                   + (dt/(2.0*dx))*p_I*(Qn[i+1][0]-Qn[i-1][0]);
+        Qnp1[i][3] = Qn[i][3] - (dt/dx)*(Enf[i-nhc+1][2]-Enf[i-nhc][2]) \
+                   + (dt/(2.0*dx))*p_I*u_I*(Qn[i+1][0]-Qn[i-1][0]);
+        // Phase 2:
+        Qnp1[i][4] = Qn[i][4] - (dt/dx)*(Enf[i-nhc+1][3]-Enf[i-nhc][3]);
+        Qnp1[i][5] = Qn[i][5] - (dt/dx)*(Enf[i-nhc+1][4]-Enf[i-nhc][4]) \
+                   + (dt/(2.0*dx))*p_I*(Qn[i-1][0]-Qn[i+1][0]);
+        Qnp1[i][6] = Qn[i][6] - (dt/dx)*(Enf[i-nhc+1][5]-Enf[i-nhc][5]) \
+                   + (dt/(2.0*dx))*p_I*u_I*(Qn[i-1][0]-Qn[i+1][0]);
     }
+    computeBCs(n, nhc, Qnp1);
 }

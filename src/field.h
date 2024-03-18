@@ -25,5 +25,6 @@ void phaseToConservative(
 
 void computeBCs(int n, int nhc, double**& Qn);
 void computeFluxCellCenters(phase phase1, phase phase2, int nt, double**& Qn, double**& En);
+void updateQn(int nt, double**& Qn, double**& Qnp1);
 
 #endif
