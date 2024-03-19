@@ -37,7 +37,7 @@ int main()
     double **Qn, **Qnp1, **Snf, **En, **Enf;
     RunTimeParameters sim_par;
     sim_par = (RunTimeParameters){
-        .nit = 101, .nrest = 100, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
+        .nit = 11, .nrest = 1, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
     //std::string file_Qn;
     char buffer[20];
 

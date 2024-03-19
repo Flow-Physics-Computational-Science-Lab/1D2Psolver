@@ -181,6 +181,8 @@ void extrapolateGudunovFluxCellFaces(
     }
 
     double local_CFL_max = overall_max*sim_par.dt/sim_par.dx;
+    
+    std::cout << "max(CFL) = " << local_CFL_max << std::endl;
 
     if (local_CFL_max > sim_par.CFL) {
         delete[] local_wave_speed;
@@ -195,7 +197,7 @@ void extrapolateGudunovFluxCellFaces(
         }
         for (int j=3; j<6; j++) {
             Enf[i-nhc+1][j] = 0.5*(En[i][j] + En[i+1][j] \
-                                 -Snf[i-nhc+1][1]*(Qn[i+1][j+1] - Qn[i][j+1]));
+                                  -Snf[i-nhc+1][1]*(Qn[i+1][j+1] - Qn[i][j+1]));
         }
     }
 
@@ -257,7 +259,7 @@ void advanceTimeHyperbolicGudunov(
     // Advance in time:
     double p_I, u_I;
     double dt = sim_par.dt, dx = sim_par.dx;
-    for (int i=nhc; i<(n-1-nhc); i++) {
+    for (int i=nhc; i<(n+nhc-1); i++) {
         p_I = computePressureInterface(phase1, phase2, Qn[i]);
         u_I = computeVelocityInterface(phase1, phase2, Qn[i]);
         // Volume fraction of phase 1:

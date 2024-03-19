@@ -77,18 +77,18 @@ void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Q
 {
     std::cout << "phaseToConservative" << std::endl;
     // Compute interior cell values:
-    double e1, e2;
+    double rho1_e1, rho2_e2;
     for (int i=nhc; i<(n+nhc-1); i++) {
         Qn[i][1] = Qn[i][0]*phase1.rho;
         Qn[i][2] = Qn[i][0]*phase1.rho*phase1.u;
-        e1       = phase1.p/(phase1.gamma - 1.0) \
+        rho1_e1  = phase1.p/(phase1.gamma - 1.0) \
                  + phase1.gamma*phase1.pi/(phase1.gamma-1);
-        Qn[i][3] = Qn[i][0]*phase1.rho*(e1 + 0.5*phase1.u*phase1.u);
+        Qn[i][3] = Qn[i][0]*(rho1_e1 + 0.5*phase1.rho*phase1.u*phase1.u);
         Qn[i][4] = (1.0 - Qn[i][0])*phase2.rho;
         Qn[i][5] = (1.0 - Qn[i][0])*phase2.rho*phase2.u;
-        e2       = phase2.p/(phase2.gamma - 1.0) \
+        rho2_e2  = phase2.p/(phase2.gamma - 1.0) \
                  + phase2.gamma*phase2.pi/(phase2.gamma-1);
-        Qn[i][6] = (1.0 - Qn[i][0])*phase2.rho*(e2 + 0.5*phase2.u*phase2.u);
+        Qn[i][6] = (1.0 - Qn[i][0])*(rho2_e2 + 0.5*phase2.rho*phase2.u*phase2.u);
     }
 
     // Compute BCs:
@@ -115,7 +115,7 @@ void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Q
  */
 void computeBCs(int n,  int nhc, double**& Qn)
 {
-    std::cout << "computeBCs" << std::endl;
+    //std::cout << "computeBCs" << std::endl;
 
     // Compute BCs:
     // No-slip for velocity;
@@ -132,11 +132,11 @@ void computeBCs(int n,  int nhc, double**& Qn)
         Qn[nhc-(i+1)  ][4] =  Qn[nhc+i][4];
         Qn[nhc+(i+n-1)][4] =  Qn[nhc+(-i+n-2)][4];
         // No-slip for right wall:
-        //Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
-        //Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
+        Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
+        Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
         // No-gradient:
-        Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
-        Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
+        //Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
+        //Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
         Qn[nhc-(i+1)  ][6] =  Qn[nhc+i][6];
         Qn[nhc+(i+n-1)][6] =  Qn[nhc+(-i+n-2)][6];
     }
@@ -166,16 +166,16 @@ void computeFluxCellCenters(phase phase1, phase phase2, int nt, double **&Qn, do
     for (int i=0; i<nt; i++) {
         // Phase 1:
         En[i][0] = Qn[i][2];
-        u_k = Qn[i][2]/Qn[i][1];
-        a_kp_k = (phase1.gamma-1.0)*(Qn[i][3]-0.5*Qn[i][2]*u_k) \
-               - Qn[i][0]*phase1.gamma*phase1.pi;
+        u_k      = Qn[i][2]/Qn[i][1];
+        a_kp_k   = (phase1.gamma-1.0)*(Qn[i][3]-0.5*Qn[i][2]*u_k) \
+                 - Qn[i][0]*phase1.gamma*phase1.pi;
         En[i][1] = Qn[i][2]*u_k + a_kp_k;
         En[i][2] = Qn[i][3]*u_k + a_kp_k*u_k;
         // Phase 2:
         En[i][3] = Qn[i][5];
-        u_k = Qn[i][5]/Qn[i][4];
-        a_kp_k = (phase2.gamma-1.0)*(Qn[i][6]-0.5*Qn[i][5]*u_k) \
-               - (1.0-Qn[i][0])*phase2.gamma*phase2.pi;
+        u_k      = Qn[i][5]/Qn[i][4];
+        a_kp_k   = (phase2.gamma-1.0)*(Qn[i][6]-0.5*Qn[i][5]*u_k) \
+                 - (1.0-Qn[i][0])*phase2.gamma*phase2.pi;
         En[i][4] = Qn[i][5]*u_k + a_kp_k;
         En[i][5] = Qn[i][6]*u_k + a_kp_k*u_k;
     }
