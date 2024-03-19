@@ -265,8 +265,8 @@ void advanceTimeHyperbolicGudunov(
         // Volume fraction of phase 1:
         Qnp1[i][0] = Qn[i][0] \
             - (dt/(2.0*dx))*((Qn[i][2]/Qn[i][1])*(Qn[i+1][0]-Qn[i-1][0])
-                    - Snf[i-nhc+1][0]*(Qn[i+1][0]-Qn[i][0])
-                    + Snf[i-nhc][0]*(Qn[i][0]-Qn[i-1][0]));
+                             -Snf[i-nhc+1][0]*(Qn[i+1][0]-Qn[i][0])
+                             +Snf[i-nhc][0]*(Qn[i][0]-Qn[i-1][0]));
         // Phase 1:
         Qnp1[i][1] = Qn[i][1] - (dt/dx)*(Enf[i-nhc+1][0]-Enf[i-nhc][0]);
         Qnp1[i][2] = Qn[i][2] - (dt/dx)*(Enf[i-nhc+1][1]-Enf[i-nhc][1]) \

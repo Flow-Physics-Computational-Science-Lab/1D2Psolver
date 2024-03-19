@@ -132,11 +132,11 @@ void computeBCs(int n,  int nhc, double**& Qn)
         Qn[nhc-(i+1)  ][4] =  Qn[nhc+i][4];
         Qn[nhc+(i+n-1)][4] =  Qn[nhc+(-i+n-2)][4];
         // No-slip for right wall:
-        Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
-        Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
+        //Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
+        //Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
         // No-gradient:
-        //Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
-        //Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
+        Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
+        Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
         Qn[nhc-(i+1)  ][6] =  Qn[nhc+i][6];
         Qn[nhc+(i+n-1)][6] =  Qn[nhc+(-i+n-2)][6];
     }
