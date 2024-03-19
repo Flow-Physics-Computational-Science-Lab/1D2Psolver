@@ -5,8 +5,9 @@
 #include "array.h"
 #include "grid.h"
 #include "field.h"
-#include "schemes/runtimeparameters.h"
+#include "runtimeparameters.h"
 #include "schemes/gudunov.h"
+#include "schemes/relaxation.h"
 #include "log.h"
 
 int main() 
@@ -91,11 +92,17 @@ int main()
             //return 1;
         }
 
-        // Pressure and velocity relaxation:
-        //relaxationPresVel();
-
+        // TODO:
+        // -----
+        //  - improve this multiple copy of Qn+1 to Qn;
         // Update Qn as the computed Qn+1:
+        //updateQn(n+2*nhc-1, Qn, Qnp1);
+
+        // Velocity and pressure relaxation:
+        relaxationVelocity(n+2*nhc-1, Qn, Qnp1);
         updateQn(n+2*nhc-1, Qn, Qnp1);
+        //relaxationPressure();
+        //updateQn(n+2*nhc-1, Qn, Qnp1);
 
         // Write file:
         if (i%sim_par.nrest == 0) {

@@ -2,7 +2,7 @@
 #define GUDUNOV
 
 #include "../field.h"
-#include "runtimeparameters.h"
+#include "../runtimeparameters.h"
 
 void advanceTimeHyperbolicGudunov(
     phase phase1, phase phase2, 
