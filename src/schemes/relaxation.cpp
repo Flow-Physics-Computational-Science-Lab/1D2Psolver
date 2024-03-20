@@ -1,5 +1,6 @@
 #include <iostream>
 #include "relaxation.h"
+#include "../field.h"
 
 /* Method to relax each phase velocity to its equilibrium value, ie, the mixture 
  * velocity and readjust the phasic energy due to the relaxation of the velocity.
@@ -14,6 +15,12 @@
  *                         hyperbolic integration;
  *  double**&    Qhu     : reference to array of conservative variables after 
  *                         hyperbolic integration and velocity relaxation;
+ * 
+ * TODO:
+ * -----
+ *  - understand the update in internal energy for the V_i^n term, is it the one
+ *  before or after the hyperbolic integration?
+ *  - check sign in the internal energy update: plus or minus for e_1_hu, etc;
  */
 void relaxationVelocity(int n, int nhc, double **&Qn, double **&Qh, double **&Qhu)
 {
@@ -31,8 +38,10 @@ void relaxationVelocity(int n, int nhc, double **&Qn, double **&Qh, double **&Qh
         // Compute readjusted internal energy due to velocity relaxation:
         e_1_h  =  Qh[i][3]/Qh[i][1] - 0.5*u_1_h*u_1_h;
         e_2_h  =  Qh[i][6]/Qh[i][4] - 0.5*u_2_h*u_2_h;
-        e_1_hu =  e_1_h - 0.5*(u_I_hu-u_1_h)*(u_I_n-u_1_h);
-        e_2_hu =  e_2_h + 0.5*(u_I_hu-u_2_h)*(u_I_n-u_2_h);
+        e_1_hu =  e_1_h + 0.5*(u_I_hu-u_1_h)*(u_I_n-u_1_h);
+        e_2_hu =  e_2_h - 0.5*(u_I_hu-u_2_h)*(u_I_n-u_2_h);
+        //e_1_hu =  e_1_h - 0.5*(u_I_hu-u_1_h)*(u_I_n-u_1_h);
+        //e_2_hu =  e_2_h + 0.5*(u_I_hu-u_2_h)*(u_I_n-u_2_h);
 
         // Update conservative variables array:
         Qhu[i][0] = Qh[i][0];
@@ -43,4 +52,6 @@ void relaxationVelocity(int n, int nhc, double **&Qn, double **&Qh, double **&Qh
         Qhu[i][5] = Qh[i][4]*u_I_hu;
         Qhu[i][6] = Qh[i][4]*(e_2_hu + 0.5*u_I_hu*u_I_hu);
     }
+    
+    computeBCs(n, nhc, Qhu);
 }

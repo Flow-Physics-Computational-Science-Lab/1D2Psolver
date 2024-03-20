@@ -59,9 +59,7 @@ int main()
     initializeWaterAirShockTube(phase1_0, phase2_0, xI, n, nhc, xcs, Qn);
     //const char* file_Q0 = "./out/Q00000";
     sprintf(buffer, "./out/Q%05d", 0);
-    std::string file_Qn(buffer);
-    writeBinary2DArray(file_Qn, n+2*nhc-1, 7, Qn);
-    //writeCSV2DArray(file_Q0, n+2*nhc-1, 7, Qn);
+    writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qn);
     
     // 4) Run simulation:
     allocate2d(n, 2, Snf);
@@ -114,11 +112,9 @@ int main()
 
         // Write file:
         if (i%sim_par.nrest == 0) {
-            //file_Qn = "./out/Q" + std::format("{i:05d}"); 
             sprintf(buffer, "./out/Qh%05d", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qh); 
             sprintf(buffer, "./out/Qhu%05d", i);
-            //std::string file_Qn(buffer);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhu); 
         }
     }
