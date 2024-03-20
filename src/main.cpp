@@ -35,7 +35,7 @@ int main()
     //printPhase(phase2_0);
     double xI = 0.7;
     // c) Run time parameters:
-    double **Qn, **Qnp1, **Snf, **En, **Enf;
+    double **Qn, **Qh, **Qhu, **Qhup, **Qnp1, **Snf, **En, **Enf;
     RunTimeParameters sim_par;
     sim_par = (RunTimeParameters){
         .nit = 11, .nrest = 1, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
@@ -52,6 +52,9 @@ int main()
 
     // 3) Initialize flow field:
     allocate2d(n+2*nhc-1, 7, Qn);
+    allocate2d(n+2*nhc-1, 7, Qh);
+    allocate2d(n+2*nhc-1, 7, Qhu);
+    allocate2d(n+2*nhc-1, 7, Qhup);
     allocate2d(n+2*nhc-1, 7, Qnp1);
     initializeWaterAirShockTube(phase1_0, phase2_0, xI, n, nhc, xcs, Qn);
     //const char* file_Q0 = "./out/Q00000";
@@ -76,7 +79,7 @@ int main()
                 phase1_0, phase2_0, 
                 sim_par,
                 n, nhc, 
-                Qn, Qnp1,
+                Qn, Qh,
                 Snf, En, Enf
             );
         } catch (const std::runtime_error) {
@@ -84,6 +87,9 @@ int main()
             deallocate1d(xcs);
             deallocate1d(xhs);
             deallocate2d(Qn);
+            deallocate2d(Qh);
+            deallocate2d(Qhu);
+            deallocate2d(Qhup);
             deallocate2d(Qnp1);
             deallocate2d(Snf);
             deallocate2d(En);
@@ -99,17 +105,21 @@ int main()
         //updateQn(n+2*nhc-1, Qn, Qnp1);
 
         // Velocity and pressure relaxation:
-        relaxationVelocity(n+2*nhc-1, Qn, Qnp1);
-        updateQn(n+2*nhc-1, Qn, Qnp1);
+        relaxationVelocity(n, nhc, Qn, Qh, Qhu);
+        //updateQn(n+2*nhc-1, Qn, Qnp1);
         //relaxationPressure();
+
+        updateQn(n+2*nhc-1, Qn, Qhu);
         //updateQn(n+2*nhc-1, Qn, Qnp1);
 
         // Write file:
         if (i%sim_par.nrest == 0) {
             //file_Qn = "./out/Q" + std::format("{i:05d}"); 
-            sprintf(buffer, "./out/Q%05d", i);
-            std::string file_Qn(buffer);
-            writeBinary2DArray(file_Qn, n+2*nhc-1, 7, Qn); 
+            sprintf(buffer, "./out/Qh%05d", i);
+            writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qh); 
+            sprintf(buffer, "./out/Qhu%05d", i);
+            //std::string file_Qn(buffer);
+            writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhu); 
         }
     }
     std::cout << std::endl;
@@ -119,6 +129,9 @@ int main()
     deallocate1d(xcs);
     deallocate1d(xhs);
     deallocate2d(Qn);
+    deallocate2d(Qh);
+    deallocate2d(Qhu);
+    deallocate2d(Qhup);
     deallocate2d(Qnp1);
     deallocate2d(Snf);
     deallocate2d(En);

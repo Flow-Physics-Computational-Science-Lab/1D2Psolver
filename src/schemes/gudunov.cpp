@@ -39,10 +39,11 @@ void extrapolateGudunovFluxCellFaces(
  *  struct phase phase2  : phase1 structure with EoS parameters;
  *  struct RunTimeParameters
  *               sim_par : sim_par structure with dt and dx parameters;
- *  int          nt      : total number of cells, counting halos (n+2*nhc-1); double**&    Qn      : reference to array of conservative variables at time
+ *  int          nt      : total number of cells, counting halos (n+2*nhc-1); 
+ *  double**&    Qn      : reference to array of conservative variables at time
  *                         step n;
- *  double**&    Qnp1    : reference to array of conservative variables at time
- *                         step n+1;
+ *  double**&    Qh      : reference to array of conservative variables after 
+ *                         hyperbolic integration;
  *  double**&    Snf     : reference to array of wave speeds at cell faces at time 
  *                         step n;
  *  double**&    En      : reference to array of fluxes based on Qn at time step n;
@@ -59,7 +60,7 @@ void advanceTimeHyperbolicGudunov(
     phase phase1, phase phase2, 
     RunTimeParameters sim_par,
     int n, int nhc, 
-    double**& Qn, double**& Qnp1,
+    double**& Qn, double**& Qh,
     double**& Snf, double**& En, double**& Enf
 )
 {
@@ -82,24 +83,24 @@ void advanceTimeHyperbolicGudunov(
         p_I = computePressureInterface(phase1, phase2, Qn[i]);
         u_I = computeVelocityInterface(phase1, phase2, Qn[i]);
         // Volume fraction of phase 1:
-        Qnp1[i][0] = Qn[i][0] \
+        Qh[i][0] = Qn[i][0] \
             - (dt/(2.0*dx))*((Qn[i][2]/Qn[i][1])*(Qn[i+1][0]-Qn[i-1][0])
                              -Snf[i-nhc+1][0]*(Qn[i+1][0]-Qn[i][0])
                              +Snf[i-nhc][0]*(Qn[i][0]-Qn[i-1][0]));
         // Phase 1:
-        Qnp1[i][1] = Qn[i][1] - (dt/dx)*(Enf[i-nhc+1][0]-Enf[i-nhc][0]);
-        Qnp1[i][2] = Qn[i][2] - (dt/dx)*(Enf[i-nhc+1][1]-Enf[i-nhc][1]) \
-                   + (dt/(2.0*dx))*p_I*(Qn[i+1][0]-Qn[i-1][0]);
-        Qnp1[i][3] = Qn[i][3] - (dt/dx)*(Enf[i-nhc+1][2]-Enf[i-nhc][2]) \
-                   + (dt/(2.0*dx))*p_I*u_I*(Qn[i+1][0]-Qn[i-1][0]);
+        Qh[i][1] = Qn[i][1] - (dt/dx)*(Enf[i-nhc+1][0]-Enf[i-nhc][0]);
+        Qh[i][2] = Qn[i][2] - (dt/dx)*(Enf[i-nhc+1][1]-Enf[i-nhc][1]) \
+                 + (dt/(2.0*dx))*p_I*(Qn[i+1][0]-Qn[i-1][0]);
+        Qh[i][3] = Qn[i][3] - (dt/dx)*(Enf[i-nhc+1][2]-Enf[i-nhc][2]) \
+                 + (dt/(2.0*dx))*p_I*u_I*(Qn[i+1][0]-Qn[i-1][0]);
         // Phase 2:
-        Qnp1[i][4] = Qn[i][4] - (dt/dx)*(Enf[i-nhc+1][3]-Enf[i-nhc][3]);
-        Qnp1[i][5] = Qn[i][5] - (dt/dx)*(Enf[i-nhc+1][4]-Enf[i-nhc][4]) \
-                   + (dt/(2.0*dx))*p_I*(Qn[i-1][0]-Qn[i+1][0]);
-        Qnp1[i][6] = Qn[i][6] - (dt/dx)*(Enf[i-nhc+1][5]-Enf[i-nhc][5]) \
-                   + (dt/(2.0*dx))*p_I*u_I*(Qn[i-1][0]-Qn[i+1][0]);
+        Qh[i][4] = Qn[i][4] - (dt/dx)*(Enf[i-nhc+1][3]-Enf[i-nhc][3]);
+        Qh[i][5] = Qn[i][5] - (dt/dx)*(Enf[i-nhc+1][4]-Enf[i-nhc][4]) \
+                 + (dt/(2.0*dx))*p_I*(Qn[i-1][0]-Qn[i+1][0]);
+        Qh[i][6] = Qn[i][6] - (dt/dx)*(Enf[i-nhc+1][5]-Enf[i-nhc][5]) \
+                 + (dt/(2.0*dx))*p_I*u_I*(Qn[i-1][0]-Qn[i+1][0]);
     }
-    computeBCs(n, nhc, Qnp1);
+    computeBCs(n, nhc, Qh);
 }
 
 /* Method to extrapolate fluxes to cell faces considering wave speeds. 

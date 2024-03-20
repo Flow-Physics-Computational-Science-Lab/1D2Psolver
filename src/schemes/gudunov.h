@@ -8,7 +8,7 @@ void advanceTimeHyperbolicGudunov(
     phase phase1, phase phase2, 
     RunTimeParameters sim_par,
     int n, int nhc, 
-    double**& Qn, double**& Qnp1,
+    double**& Qn, double**& Qh,
     double**& Snf, double**& En, double**& Enpmh
 );
 
