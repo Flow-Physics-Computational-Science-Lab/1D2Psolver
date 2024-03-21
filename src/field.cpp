@@ -51,7 +51,7 @@ void initializeWaterAirShockTube(
         Q0[nhc-(i+1)  ][0] = Q0[nhc+i][0];
         Q0[nhc+(i+n-1)][0] = Q0[nhc+(-i+n-2)][0];
     }
-    phaseToConservative(phase1, phase2, n, nhc, Q0);
+    phaseToConservative(phase1, phase2, n, nhc, bp1, Q0);
     //print2DArray(n+2*nhc-1, 1, Q0);
     deallocate1d(bp1);
 }
@@ -73,7 +73,11 @@ void initializeWaterAirShockTube(
  *  int          nhc    : number of halo cells;
  *  double**&    Qn     : reference to array of conservative variables;
  */
-void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Qn)
+void phaseToConservative(
+    phase phase1, phase phase2, 
+    int n, int nhc, 
+    double*& bp1, double**& Qn
+)
 {
     std::cout << "phaseToConservative" << std::endl;
     // Compute interior cell values:
@@ -83,11 +87,13 @@ void phaseToConservative(phase phase1, phase phase2, int n, int nhc, double**& Q
         Qn[i][2] = Qn[i][0]*phase1.rho*phase1.u;
         rho1_e1  = phase1.p/(phase1.gamma - 1.0) \
                  + phase1.gamma*phase1.pi/(phase1.gamma-1);
+        rho1_e1  = bp1[i]*rho1_e1 + (1.0-bp1[i])*phase2.p/phase1.p;  
         Qn[i][3] = Qn[i][0]*(rho1_e1 + 0.5*phase1.rho*phase1.u*phase1.u);
         Qn[i][4] = (1.0 - Qn[i][0])*phase2.rho;
         Qn[i][5] = (1.0 - Qn[i][0])*phase2.rho*phase2.u;
         rho2_e2  = phase2.p/(phase2.gamma - 1.0) \
                  + phase2.gamma*phase2.pi/(phase2.gamma-1);
+        rho2_e2  = bp1[i]*phase1.p/phase2.p + (1.0-bp1[i])*rho2_e2;  
         Qn[i][6] = (1.0 - Qn[i][0])*(rho2_e2 + 0.5*phase2.rho*phase2.u*phase2.u);
     }
 

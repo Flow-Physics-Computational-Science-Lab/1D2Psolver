@@ -96,26 +96,21 @@ int main()
             //return 1;
         }
 
-        // TODO:
-        // -----
-        //  - improve this multiple copy of Qn+1 to Qn;
-        // Update Qn as the computed Qn+1:
-        //updateQn(n+2*nhc-1, Qn, Qnp1);
-
         // Velocity and pressure relaxation:
         relaxationVelocity(n, nhc, Qn, Qh, Qhu);
-        //updateQn(n+2*nhc-1, Qn, Qnp1);
-        //relaxationPressure();
+        relaxationPressure(phase1_0, phase2_0, n, nhc, Qn, Qh, Qhu, Qhup);
 
-        updateQn(n+2*nhc-1, Qn, Qhu);
-        //updateQn(n+2*nhc-1, Qn, Qnp1);
+        //updateQn(n+2*nhc-1, Qn, Qhu);
+        updateQn(n+2*nhc-1, Qn, Qhup);
 
         // Write file:
         if (i%sim_par.nrest == 0) {
-            sprintf(buffer, "./out/Qh%05d", i);
+            sprintf(buffer, "./out/Q%05d_h", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qh); 
-            sprintf(buffer, "./out/Qhu%05d", i);
+            sprintf(buffer, "./out/Q%05d_hu", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhu); 
+            sprintf(buffer, "./out/Q%05d_hup", i);
+            writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhup); 
         }
     }
     std::cout << std::endl;

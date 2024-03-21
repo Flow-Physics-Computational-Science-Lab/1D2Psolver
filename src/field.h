@@ -19,7 +19,7 @@ void initializeWaterAirShockTube(
 
 void phaseToConservative(
     phase phase1, phase phase2, int n, int nhc,
-    double**& Qn
+    double*& bp1, double**& Qn
 );
 //void conservativeToPhase(phase& phase1, phase& phase2, double**& Qn);
 
