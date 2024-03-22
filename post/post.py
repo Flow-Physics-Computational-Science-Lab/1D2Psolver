@@ -21,7 +21,11 @@ if __name__ == '__main__':
     xs  = np.fromfile(f"./out/grid", dtype=np.double)
     xcs = 0.5*(xs[1:] + xs[:-1]) 
 
-    rests = [i for i in range(1, 11)]
+    #rests = [i for i in range(1, 11)]
+    #rests = [10*i for i in range(1, 11)]
+    rests = [100*i for i in range(1, 11)]
+    #rests = [660+i for i in range(11)]
+    #rests = [500*i for i in range(1, 6)]
 
     Q0 = np.fromfile(f"./out/Q00000", dtype=np.double)
     Q0 = Q0.reshape((102,7))
@@ -37,11 +41,11 @@ if __name__ == '__main__':
     # -------------------------------------------------------------------- #
     # Phasic total energy                                                  #
     # -------------------------------------------------------------------- #
-    axs[0,1].plot(xcs,  Q0[:,3]/Q0[:,1],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
-    axs[0,1].plot(xcs,  Q0[:,6]/Q0[:,4],                        linestyle='solid',  color='tab:orange', label="Phase 2")
-    #axs[0,1].plot([], [],                                       linestyle='solid', color='tab:green',  label="Mixture")
-    axs[0,1].plot(xcs, (Q0[:,3]+Q0[:,6])/(Q0[:,1]+Q0[:,4]),     linestyle='solid',  color='tab:green',  label="Mixture")
-    axs[0,1].set(ylabel=r"$e_t^l {\rm [J/kg]}$")
+    axs[0,1].plot(xcs,  Q0[:,3],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+    axs[0,1].plot(xcs,  Q0[:,6],                  linestyle='solid',  color='tab:orange', label="Phase 2")
+    axs[0,1].plot([], [],                                       linestyle='solid', color='tab:green',  label="Mixture")
+    #axs[0,1].plot(xcs, (Q0[:,3]+Q0[:,6])/(Q0[:,1]+Q0[:,4]),     linestyle='solid',  color='tab:green',  label="Mixture")
+    axs[0,1].set(ylabel=r"$\alpha_l \rho_le_t^l {\rm [J]}$")
     # -------------------------------------------------------------------- #
     # Mixture density                                                      #
     # -------------------------------------------------------------------- #
@@ -83,8 +87,75 @@ if __name__ == '__main__':
     fig.savefig(f"./post/Q00000.png", dpi=300)
     plt.close(fig)
 
-    quit() 
+    #quit() 
 
+    # End solution:
+    for rest in rests:
+        Q = np.fromfile(f"./out/Q{rest:05d}", dtype=np.double)
+        #Q = np.fromfile(f"./out/Q{rest:05d}_h", dtype=np.double)
+        Q = Q.reshape((102,7))
+        Q = Q[1:-1,:]
+        fig, axs = plt.subplots(3, 2, figsize=(10,6), sharex='col')
+        # -------------------------------------------------------------------- #
+        # Phasic densities                                                     #
+        # -------------------------------------------------------------------- #
+        axs[0,0].plot(xcs,  Q[:,1]/Q[:,0],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[0,0].plot(xcs,  Q[:,4]/(1.0-Q[:,0]),                  linestyle='solid',  color='tab:orange', label="Phase 2")
+        #axs[0,0].plot([],   [],                                     linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[0,0].set(ylabel=r"$\rho_l {\rm [kg/m^3]}$")
+        # -------------------------------------------------------------------- #
+        # Phasic total energy                                                  #
+        # -------------------------------------------------------------------- #
+        axs[0,1].plot(xcs,  Q[:,3],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Q[:,6],                        linestyle='solid',  color='tab:orange', label="Phase 2")
+        #axs[0,1].plot([], [],                                       linestyle='solid', color='tab:green',  label="Mixture")
+        axs[0,1].plot(xcs,  Q[:,3]+Q[:,6],                linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[0,1].set(ylabel=r"$\alpha_l \rho_l e_t^l {\rm [J/kg]}$")
+        # -------------------------------------------------------------------- #
+        # Mixture density                                                      #
+        # -------------------------------------------------------------------- #
+        #axs[1,0].plot([],   [],                                     linestyle='solid',  color='tab:blue',   label="Phase 1")
+        #axs[1,0].plot([],   [],                                     linestyle='solid',  color='tab:orange', label="Phase 2")
+        axs[1,0].plot(xcs, (Q[:,1]+Q[:,4]),                       linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[1,0].set(ylabel=r"$\rho {\rm [kg/m^3]}$")
+        # -------------------------------------------------------------------- #
+        # Mixture pressure                                                     #
+        # -------------------------------------------------------------------- #
+        a1_p1h = (4.4-1.0)*(Q[:,3]-0.5*(Q[:,2]*Q[:,2])/Q[:,1]) - Q[:,0]*4.4*(6.0e8)
+        a2_p2h = (1.4-1.0)*(Q[:,6]-0.5*(Q[:,5]*Q[:,5])/Q[:,4])
+        p1h,  = axs[1,1].plot([],   [],                         linestyle='solid',  color='tab:blue',   label="Phase 1")
+        #p1h,  = axs[1,1].plot(xcs,  a1_p1h/Q[:,0],                         linestyle='solid',  color='tab:blue',   label="Phase 1")
+        p2h,  = axs[1,1].plot([],   [],                         linestyle='solid',  color='tab:orange', label="Phase 2")
+        #p2h,  = axs[1,1].plot(xcs,  a2_p2h/(1.0-Q[:,0]),                   linestyle='solid',  color='tab:orange', label="Phase 2")
+        #axs[1,1].plot([],   [],                                label="Mixture")
+        ph,   = axs[1,1].plot(xcs, (a1_p1h+a2_p2h),             linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[1,1].set(ylabel=r"$p {\rm [Pa]}$")
+        # -------------------------------------------------------------------- #
+        # Phasic velocities                                                    #
+        # -------------------------------------------------------------------- #
+        axs[2,0].plot(xcs,  Q[:,2]/Q[:,1],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[2,0].plot(xcs,  Q[:,5]/Q[:,4],                        linestyle='solid',  color='tab:orange', label="Phase 2")
+        #axs[2,0].plot(xcs, (Q[:,2]+Q[:,5])/(Q[:,1]+Q[:,4]),     linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[2,0].set(ylabel=r"$u_l {\rm [m/s]}$")
+        # -------------------------------------------------------------------- #
+        # Phase 2 volume fraction                                              #
+        # -------------------------------------------------------------------- #
+        #axs[2,1].plot([],   [],                                     linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[2,1].plot(xcs, (1.0-Q[:,0]),                           linestyle='solid',  color='tab:orange', label="Phase 2")
+        #axs[2,1].plot([],   [],                                     linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[2,1].set(ylabel=r"$\alpha_2 {\rm [-]}$")
+        axs[1,1].legend(#[(p1h, p1hu), (p2h, p2hu), (ph, phu)], 
+                        ['Phase 1', 'Phase 2', 'Mixture'], 
+                        #handler_map={tuple: HandlerTuple(ndivide=None)},  
+                        bbox_to_anchor=(1.04, 1), loc="upper left")
+        fig.tight_layout()
+        fig.savefig(f"./post/Q{rest:05d}.png", dpi=300)
+        plt.close(fig)
+
+    print("--End solution OK!")
+
+    #quit() 
+    
     # Comparison of steps:
     for rest in rests:
         Qh = np.fromfile(f"./out/Q{rest:05d}_h", dtype=np.double)
@@ -93,38 +164,39 @@ if __name__ == '__main__':
         Qhu = np.fromfile(f"./out/Q{rest:05d}_hu", dtype=np.double)
         Qhu = Qhu.reshape((102,7))
         Qhu = Qhu[1:-1,:]
+        Qhup = np.fromfile(f"./out/Q{rest:05d}_hup", dtype=np.double)
+        Qhup = Qhup.reshape((102,7))
+        Qhup = Qhup[1:-1,:]
         fig, axs = plt.subplots(3, 2, figsize=(10,6), sharex='col')
         # -------------------------------------------------------------------- #
         # Phasic densities                                                     #
         # -------------------------------------------------------------------- #
         axs[0,0].plot(xcs,  Qh[:,1]/Qh[:,0],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
         axs[0,0].plot(xcs,  Qh[:,4]/(1.0-Qh[:,0]),                  linestyle='solid',  color='tab:orange', label="Phase 2")
-        #axs[0,0].plot([],   [],                                     linestyle='solid',  color='tab:green',  label="Mixture")
         axs[0,0].plot(xcs,  Qhu[:,1]/Qhu[:,0],                      linestyle='dashed', color='tab:blue',   label="Phase 1")
         axs[0,0].plot(xcs,  Qhu[:,4]/(1.0-Qhu[:,0]),                linestyle='dashed', color='tab:orange', label="Phase 2")
-        #axs[0,0].plot([],   [],                                     linestyle='dashed', color='tab:green',  label="Mixture")
+        axs[0,0].plot(xcs,  Qhup[:,1]/Qhup[:,0],                    linestyle='dotted', color='tab:blue',   label="Phase 1")
+        axs[0,0].plot(xcs,  Qhup[:,4]/(1.0-Qhup[:,0]),              linestyle='dotted', color='tab:orange', label="Phase 2")
         axs[0,0].set(ylabel=r"$\rho_l {\rm [kg/m^3]}$")
         # -------------------------------------------------------------------- #
         # Phasic total energy                                                  #
         # -------------------------------------------------------------------- #
-        axs[0,1].plot(xcs,  Qh[:,3]/Qh[:,1],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
-        axs[0,1].plot(xcs,  Qh[:,6]/Qh[:,4],                        linestyle='solid',  color='tab:orange', label="Phase 2")
-        #axs[0,1].plot([], [],                                       linestyle='solid', color='tab:green',  label="Mixture")
-        #axs[0,1].plot(xcs, (Qh[:,3]+Qh[:,6])/(Qh[:,1]+Qh[:,4]),     linestyle='solid',  color='tab:green',  label="Mixture")
-        axs[0,1].plot(xcs,  Qhu[:,3]/Qhu[:,1],                      linestyle='dashed', color='tab:blue',   label="Phase 1")
-        axs[0,1].plot(xcs,  Qhu[:,6]/Qhu[:,4],                      linestyle='dashed', color='tab:orange', label="Phase 2")
-        #axs[0,1].plot([], [],                                       linestyle='dashed', color='tab:green',  label="Mixture")
-        #axs[0,1].plot(xcs, (Qhu[:,3]+Qhu[:,6])/(Qhu[:,1]+Qhu[:,4]), linestyle='dashed', color='tab:green',  label="Mixture")
-        axs[0,1].set(ylabel=r"$e_t^l {\rm [J/kg]}$")
+        axs[0,1].plot(xcs,  Qh[:,3],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qh[:,6],                        linestyle='solid',  color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qh[:,3]+Qh[:,6],                linestyle='solid',  color='tab:green',  label="Mixture")
+        axs[0,1].plot(xcs,  Qhu[:,3],                       linestyle='dashed', color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qhu[:,6],                       linestyle='dashed', color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qhu[:,3]+Qhu[:,6],              linestyle='dashed', color='tab:green',  label="Mixture")
+        axs[0,1].plot(xcs,  Qhup[:,3],                      linestyle='dotted', color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qhup[:,6],                      linestyle='dotted', color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qhup[:,3]+Qhup[:,6],            linestyle='dotted', color='tab:green',  label="Mixture")
+        axs[0,1].set(ylabel=r"$\alpha_l \rho_l e_t^l {\rm [J/kg]}$")
         # -------------------------------------------------------------------- #
         # Mixture density                                                      #
         # -------------------------------------------------------------------- #
-        #axs[1,0].plot([],   [],                                     linestyle='solid',  color='tab:blue',   label="Phase 1")
-        #axs[1,0].plot([],   [],                                     linestyle='solid',  color='tab:orange', label="Phase 2")
         axs[1,0].plot(xcs, (Qh[:,1]+Qh[:,4]),                       linestyle='solid',  color='tab:green',  label="Mixture")
-        #axs[1,0].plot([],   [],                                     linestyle='dashed', color='tab:blue',   label="Phase 1")
-        #axs[1,0].plot([],   [],                                     linestyle='dashed', color='tab:orange', label="Phase 2")
         axs[1,0].plot(xcs, (Qhu[:,1]+Qhu[:,4]),                     linestyle='dashed', color='tab:green',  label="Mixture")
+        axs[1,0].plot(xcs, (Qhup[:,1]+Qhup[:,4]),                   linestyle='dotted', color='tab:green',  label="Mixture")
         axs[1,0].set(ylabel=r"$\rho {\rm [kg/m^3]}$")
         # -------------------------------------------------------------------- #
         # Mixture pressure                                                     #
@@ -145,6 +217,13 @@ if __name__ == '__main__':
         #p2hu, = axs[1,1].plot(xcs,  a2_p2hu/(1.0-Qhu[:,0]),                 linestyle='dashed', color='tab:orange', label="Phase 2")
         #axs[1,1].plot([],   [],                                label="Mixture")
         phu,  = axs[1,1].plot(xcs, (a1_p1hu+a2_p2hu),                       linestyle='dashed', color='tab:green',  label="Mixture")
+        a1_p1hup = (4.4-1.0)*(Qhup[:,3]-0.5*(Qhup[:,2]*Qhup[:,2])/Qhup[:,1]) - Qhup[:,0]*4.4*(6.0e8)
+        a2_p2hup = (1.4-1.0)*(Qhup[:,6]-0.5*(Qhup[:,5]*Qhup[:,5])/Qhup[:,4])
+        #p1hu, = axs[1,1].plot(xcs,  a1_p1hup/Qhup[:,0],                       linestyle='dotted', color='tab:blue',   label="Phase 1")
+        p1hup, = axs[1,1].plot([], [],                       linestyle='dotted', color='tab:blue',   label="Phase 1")
+        #p2hup, = axs[1,1].plot(xcs,  a2_p2hup/(1.0-Qhup[:,0]),                 linestyle='dotted', color='tab:orange', label="Phase 2")
+        p2hup, = axs[1,1].plot([], [],                 linestyle='dotted', color='tab:orange', label="Phase 2")
+        phup,  = axs[1,1].plot(xcs, (a1_p1hup+a2_p2hup),                       linestyle='dotted', color='tab:green',  label="Mixture")
         axs[1,1].set(ylabel=r"$p {\rm [Pa]}$")
         # -------------------------------------------------------------------- #
         # Phasic velocities                                                    #
@@ -155,26 +234,28 @@ if __name__ == '__main__':
         axs[2,0].plot(xcs,  Qhu[:,2]/Qhu[:,1],                      linestyle='dashed', color='tab:blue',   label="Phase 1")
         axs[2,0].plot(xcs,  Qhu[:,5]/Qhu[:,4],                      linestyle='dashed', color='tab:orange', label="Phase 2")
         #axs[2,0].plot(xcs, (Qhu[:,2]+Qhu[:,5])/(Qhu[:,1]+Qhu[:,4]), linestyle='dashed', color='tab:green',  label="Mixture")
+        axs[2,0].plot(xcs,  Qhup[:,2]/Qhup[:,1],                      linestyle='dotted', color='tab:blue',   label="Phase 1")
+        axs[2,0].plot(xcs,  Qhup[:,5]/Qhup[:,4],                      linestyle='dotted', color='tab:orange', label="Phase 2")
+        #axs[2,0].plot(xcs, (Qhup[:,2]+Qhup[:,5])/(Qhup[:,1]+Qhup[:,4]), linestyle='dotted', color='tab:green',  label="Mixture")
         axs[2,0].set(ylabel=r"$u_l {\rm [m/s]}$")
         # -------------------------------------------------------------------- #
         # Phase 2 volume fraction                                              #
         # -------------------------------------------------------------------- #
-        #axs[2,1].plot([],   [],                                     linestyle='solid',  color='tab:blue',   label="Phase 1")
         axs[2,1].plot(xcs, (1.0-Qh[:,0]),                           linestyle='solid',  color='tab:orange', label="Phase 2")
-        #axs[2,1].plot([],   [],                                     linestyle='solid',  color='tab:green',  label="Mixture")
-        #axs[2,1].plot([],   [],                                     linestyle='dashed', color='tab:blue',   label="Phase 1")
         axs[2,1].plot(xcs, (1.0-Qhu[:,0]),                          linestyle='dashed', color='tab:orange', label="Phase 2")
-        #axs[2,1].plot([],   [],                                     linestyle='dashed', color='tab:green',  label="Mixture")
+        axs[2,1].plot(xcs, (1.0-Qhup[:,0]),                         linestyle='dotted', color='tab:orange', label="Phase 2")
         axs[2,1].set(ylabel=r"$\alpha_2 {\rm [-]}$")
-        axs[1,1].legend([(p1h, p1hu), (p2h, p2hu), (ph, phu)], 
+        axs[1,1].legend([(p1h, p1hu, p1hup), (p2h, p2hu, p2hup), (ph, phu, phup)], 
                         ['Phase 1', 'Phase 2', 'Mixture'], 
                         handler_map={tuple: HandlerTuple(ndivide=None)},  
                         bbox_to_anchor=(1.04, 1), loc="upper left")
         fig.tight_layout()
-        fig.savefig(f"./post/Q{rest:05d}.png", dpi=300)
+        fig.savefig(f"./post/comp_Q{rest:05d}.png", dpi=300)
         plt.close(fig)
 
     print("--Numerical stages comparison OK!")
+
+    #quit() 
 
     # Hyperbolic step:
     for rest in rests:
@@ -192,11 +273,11 @@ if __name__ == '__main__':
         # -------------------------------------------------------------------- #
         # Phasic total energy                                                  #
         # -------------------------------------------------------------------- #
-        axs[0,1].plot(xcs,  Qh[:,3]/Qh[:,1],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
-        axs[0,1].plot(xcs,  Qh[:,6]/Qh[:,4],                        linestyle='solid',  color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qh[:,3],                        linestyle='solid',  color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qh[:,6],                        linestyle='solid',  color='tab:orange', label="Phase 2")
         #axs[0,1].plot([], [],                                       linestyle='solid', color='tab:green',  label="Mixture")
         #axs[0,1].plot(xcs, (Qh[:,3]+Qh[:,6])/(Qh[:,1]+Qh[:,4]),     linestyle='solid',  color='tab:green',  label="Mixture")
-        axs[0,1].set(ylabel=r"$e_t^l {\rm [J/kg]}$")
+        axs[0,1].set(ylabel=r"$\alpha_l \rho_l e_t^l {\rm [J]}$")
         # -------------------------------------------------------------------- #
         # Mixture density                                                      #
         # -------------------------------------------------------------------- #
@@ -256,11 +337,11 @@ if __name__ == '__main__':
         # -------------------------------------------------------------------- #
         # Phasic total energy                                                  #
         # -------------------------------------------------------------------- #
-        axs[0,1].plot(xcs,  Qhu[:,3]/Qhu[:,1],                      linestyle='dashed', color='tab:blue',   label="Phase 1")
-        axs[0,1].plot(xcs,  Qhu[:,6]/Qhu[:,4],                      linestyle='dashed', color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qhu[:,3],                      linestyle='dashed', color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qhu[:,6],                      linestyle='dashed', color='tab:orange', label="Phase 2")
         #axs[0,1].plot([], [],                                       linestyle='dashed', color='tab:green',  label="Mixture")
         #axs[0,1].plot(xcs, (Qhu[:,3]+Qhu[:,6])/(Qhu[:,1]+Qhu[:,4]), linestyle='dashed', color='tab:green',  label="Mixture")
-        axs[0,1].set(ylabel=r"$e_t^l {\rm [J/kg]}$")
+        axs[0,1].set(ylabel=r"$\alpha_l \rho_l e_t^l {\rm [J]}$")
         # -------------------------------------------------------------------- #
         # Mixture density                                                      #
         # -------------------------------------------------------------------- #
@@ -320,11 +401,11 @@ if __name__ == '__main__':
         # -------------------------------------------------------------------- #
         # Phasic total energy                                                  #
         # -------------------------------------------------------------------- #
-        axs[0,1].plot(xcs,  Qhup[:,3]/Qhup[:,1],                      linestyle='dotted', color='tab:blue',   label="Phase 1")
-        axs[0,1].plot(xcs,  Qhup[:,6]/Qhup[:,4],                      linestyle='dotted', color='tab:orange', label="Phase 2")
+        axs[0,1].plot(xcs,  Qhup[:,3],                      linestyle='dotted', color='tab:blue',   label="Phase 1")
+        axs[0,1].plot(xcs,  Qhup[:,6],                      linestyle='dotted', color='tab:orange', label="Phase 2")
         #axs[0,1].plot([], [],                                       linestyle='dotted', color='tab:green',  label="Mixture")
         #axs[0,1].plot(xcs, (Qhu[:,3]+Qhu[:,6])/(Qhu[:,1]+Qhu[:,4]), linestyle='dotted', color='tab:green',  label="Mixture")
-        axs[0,1].set(ylabel=r"$e_t^l {\rm [J/kg]}$")
+        axs[0,1].set(ylabel=r"$\alpha_l \rho_l e_t^l {\rm [J]}$")
         # -------------------------------------------------------------------- #
         # Mixture density                                                      #
         # -------------------------------------------------------------------- #

@@ -9,6 +9,7 @@
 #include "schemes/gudunov.h"
 #include "schemes/relaxation.h"
 #include "log.h"
+#include "thermo.h"
 
 int main() 
 {
@@ -31,15 +32,15 @@ int main()
         .rho = 5.0e1, .p = 1.0e5, .u = 0.0, .alpha=(1-epsilon), 
         .gamma = 1.4, .pi = 0.0, .epsilon = epsilon
     };
-    //printPhase(phase1_0);
-    //printPhase(phase2_0);
     double xI = 0.7;
     // c) Run time parameters:
     double **Qn, **Qh, **Qhu, **Qhup, **Qnp1, **Snf, **En, **Enf;
     RunTimeParameters sim_par;
     sim_par = (RunTimeParameters){
-        .nit = 11, .nrest = 1, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
-    //std::string file_Qn;
+        //.nit = 11, .nrest = 1, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
+        //.nit = 101, .nrest = 10, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
+        .nit = 1001, .nrest = 100, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
+        //.nit = 2501, .nrest = 500, .dt = 1.0e-10, .dx = dx, .CFL = 0.8};
     char buffer[20];
 
     // 2) Initialize grid:
@@ -57,16 +58,13 @@ int main()
     allocate2d(n+2*nhc-1, 7, Qhup);
     allocate2d(n+2*nhc-1, 7, Qnp1);
     initializeWaterAirShockTube(phase1_0, phase2_0, xI, n, nhc, xcs, Qn);
-    //const char* file_Q0 = "./out/Q00000";
     sprintf(buffer, "./out/Q%05d", 0);
     writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qn);
-    
+
     // 4) Run simulation:
     allocate2d(n, 2, Snf);
-    //allocate2d(n+2*nhc-2, 2, Snf);
     allocate2d(n+2*nhc-1, 6, En);
     allocate2d(n, 6, Enf);
-    //allocate2d(n+2*nhc-2, 6, Enf);
     std::cout << "Iterations:" << std::endl;
     for (int i=1; i<sim_par.nit; i++) {
         std::cout << i << ", ";
@@ -98,19 +96,23 @@ int main()
 
         // Velocity and pressure relaxation:
         relaxationVelocity(n, nhc, Qn, Qh, Qhu);
-        relaxationPressure(phase1_0, phase2_0, n, nhc, Qn, Qh, Qhu, Qhup);
+        relaxationPressure2(phase1_0, phase2_0, n, nhc, Qn, Qh, Qhu, Qhup);
 
+        //updateQn(n+2*nhc-1, Qn, Qh);
         //updateQn(n+2*nhc-1, Qn, Qhu);
         updateQn(n+2*nhc-1, Qn, Qhup);
 
         // Write file:
         if (i%sim_par.nrest == 0) {
+        //if (i%sim_par.nrest == 0 && i>659 && i<671) {
             sprintf(buffer, "./out/Q%05d_h", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qh); 
             sprintf(buffer, "./out/Q%05d_hu", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhu); 
             sprintf(buffer, "./out/Q%05d_hup", i);
             writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qhup); 
+            sprintf(buffer, "./out/Q%05d", i);
+            writeBinary2DArray(std::string(buffer), n+2*nhc-1, 7, Qn); 
         }
     }
     std::cout << std::endl;

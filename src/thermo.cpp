@@ -34,6 +34,37 @@ double stiffenedGasSoundSpeed(
     return sqrt(c2);
 }
 
+void computePressures(phase phase1, phase phase2, double *&Qn, double *&p)
+{
+    //std::cout << "computePressures" << std::endl;
+    
+    double rho_1, u_1, e_1, a_1, p_1;
+    double rho_2, u_2, e_2, a_2, p_2;
+    double g_1, pi_1, g_2, pi_2;
+
+    g_1   = phase1.gamma;
+    pi_1  = phase1.pi;
+    g_2   = phase2.gamma;
+    pi_2  = phase2.pi;
+
+    a_1   = Qn[0];
+    rho_1 = Qn[1]/Qn[0];
+    u_1   = Qn[2]/Qn[1];
+    e_1   = Qn[3]/Qn[1] - 0.5*u_1*u_1;
+    //p_1   = (g_1 - 1.0)*rho_1*e_1 - g_1*pi_1;
+    p_1   = (g_1 - 1.0)*(Qn[3] - 0.5*Qn[2]*u_1)/a_1 - g_1*pi_1;
+    a_2   = 1.0-Qn[0];
+    rho_2 = Qn[4]/(1.0-Qn[0]);
+    u_2   = Qn[5]/Qn[4];
+    e_2   = Qn[6]/Qn[4] - 0.5*u_2*u_2;
+    //p_2   = (g_2 - 1.0)*rho_2*e_2 - g_2*pi_2;
+    p_2   = (g_2 - 1.0)*(Qn[6] - 0.5*Qn[5]*u_2)/a_2 - g_2*pi_2;
+
+    // Assign to values to pointer:
+    p[0] = p_1;
+    p[1] = p_2;
+}
+
 /* Method to interface pressure based on stiffened gas equation of state and the
  * following closure:
  *
@@ -50,10 +81,10 @@ double computePressureInterface(phase phase1, phase phase2, double *&Qn)
     //std::cout << "computePressureInterface" << std::endl;
 
     double a1_p1, a2_p2;
-    a1_p1 = (phase1.gamma-1)*(Qn[3]-0.5*Qn[2]*Qn[2]/Qn[1] \
-            - Qn[0]*phase1.gamma*phase1.pi);
-    a2_p2 = (phase2.gamma-1)*(Qn[6]-0.5*Qn[5]*Qn[5]/Qn[4] \
-            - (1.0-Qn[0])*phase2.gamma*phase2.pi);
+    a1_p1 = (phase1.gamma-1)*(Qn[3]-0.5*Qn[2]*Qn[2]/Qn[1]) \
+            - Qn[0]*phase1.gamma*phase1.pi;
+    a2_p2 = (phase2.gamma-1)*(Qn[6]-0.5*Qn[5]*Qn[5]/Qn[4]) \
+            - (1.0-Qn[0])*phase2.gamma*phase2.pi;
 
     // Avoid negative pressures:
     double epsilon = 1.0e-8;

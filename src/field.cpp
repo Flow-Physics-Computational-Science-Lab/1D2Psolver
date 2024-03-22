@@ -81,20 +81,24 @@ void phaseToConservative(
 {
     std::cout << "phaseToConservative" << std::endl;
     // Compute interior cell values:
-    double rho1_e1, rho2_e2;
+    double rho1_e1, rho1_e1_1, rho1_e1_2, rho2_e2, rho2_e2_1, rho2_e2_2;
     for (int i=nhc; i<(n+nhc-1); i++) {
-        Qn[i][1] = Qn[i][0]*phase1.rho;
-        Qn[i][2] = Qn[i][0]*phase1.rho*phase1.u;
-        rho1_e1  = phase1.p/(phase1.gamma - 1.0) \
-                 + phase1.gamma*phase1.pi/(phase1.gamma-1);
-        rho1_e1  = bp1[i]*rho1_e1 + (1.0-bp1[i])*phase2.p/phase1.p;  
-        Qn[i][3] = Qn[i][0]*(rho1_e1 + 0.5*phase1.rho*phase1.u*phase1.u);
-        Qn[i][4] = (1.0 - Qn[i][0])*phase2.rho;
-        Qn[i][5] = (1.0 - Qn[i][0])*phase2.rho*phase2.u;
-        rho2_e2  = phase2.p/(phase2.gamma - 1.0) \
-                 + phase2.gamma*phase2.pi/(phase2.gamma-1);
-        rho2_e2  = bp1[i]*phase1.p/phase2.p + (1.0-bp1[i])*rho2_e2;  
-        Qn[i][6] = (1.0 - Qn[i][0])*(rho2_e2 + 0.5*phase2.rho*phase2.u*phase2.u);
+        Qn[i][1]  = Qn[i][0]*phase1.rho;
+        Qn[i][2]  = Qn[i][0]*phase1.rho*phase1.u;
+        rho1_e1_1 = phase1.p/(phase1.gamma - 1.0) \
+                  + phase1.gamma*phase1.pi/(phase1.gamma - 1.0);
+        rho1_e1_2 = phase2.p/(phase1.gamma - 1.0) \
+                  + phase1.gamma*phase1.pi/(phase1.gamma - 1.0);
+        rho1_e1   = bp1[i]*rho1_e1_1 + (1.0-bp1[i])*rho1_e1_2;  
+        Qn[i][3]  = Qn[i][0]*(rho1_e1 + 0.5*phase1.rho*phase1.u*phase1.u);
+        Qn[i][4]  = (1.0 - Qn[i][0])*phase2.rho;
+        Qn[i][5]  = (1.0 - Qn[i][0])*phase2.rho*phase2.u;
+        rho2_e2_1 = phase1.p/(phase2.gamma - 1.0) \
+                  + phase2.gamma*phase2.pi/(phase2.gamma - 1.0);
+        rho2_e2_2 = phase2.p/(phase2.gamma - 1.0) \
+                  + phase2.gamma*phase2.pi/(phase2.gamma - 1.0);
+        rho2_e2   = bp1[i]*rho2_e2_1 + (1.0-bp1[i])*rho2_e2_2;  
+        Qn[i][6]  = (1.0 - Qn[i][0])*(rho2_e2 + 0.5*phase2.rho*phase2.u*phase2.u);
     }
 
     // Compute BCs:
@@ -132,16 +136,18 @@ void computeBCs(int n,  int nhc, double**& Qn)
         Qn[nhc-(i+1)  ][1] =  Qn[nhc+i][1];
         Qn[nhc+(i+n-1)][1] =  Qn[nhc+(-i+n-2)][1];
         Qn[nhc-(i+1)  ][2] = -Qn[nhc+i][2];
-        Qn[nhc+(i+n-1)][2] = -Qn[nhc+(-i+n-2)][2];
+        // No-slip for right wall:
+        //Qn[nhc+(i+n-1)][2] = -Qn[nhc+(-i+n-2)][2];
+        // No-gradient:
+        Qn[nhc+(i+n-1)][2] =  Qn[nhc+(-i+n-2)][2];
         Qn[nhc-(i+1)  ][3] =  Qn[nhc+i][3];
         Qn[nhc+(i+n-1)][3] =  Qn[nhc+(-i+n-2)][3];
         Qn[nhc-(i+1)  ][4] =  Qn[nhc+i][4];
         Qn[nhc+(i+n-1)][4] =  Qn[nhc+(-i+n-2)][4];
+        Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
         // No-slip for right wall:
-        //Qn[nhc-(i+1)  ][5] = -Qn[nhc+i][5];
         //Qn[nhc+(i+n-1)][5] = -Qn[nhc+(-i+n-2)][5];
         // No-gradient:
-        Qn[nhc-(i+1)  ][5] =  Qn[nhc+i][5];
         Qn[nhc+(i+n-1)][5] =  Qn[nhc+(-i+n-2)][5];
         Qn[nhc-(i+1)  ][6] =  Qn[nhc+i][6];
         Qn[nhc+(i+n-1)][6] =  Qn[nhc+(-i+n-2)][6];
